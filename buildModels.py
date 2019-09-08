@@ -1,5 +1,5 @@
 import pandas as pd
-from imblearn.over_sampling import SMOTE
+#from imblearn.over_sampling import SMOTE
 
 from getConfig   import getConfig
 from getData     import getData
@@ -9,20 +9,23 @@ from optimizeRF  import buildRF
 #from optimizeNN  import buildNN
 #from optimizeXGB import buildXGB
 
-def getModelPreds(dataDict, config):
-    '''
-    For each entry in "optimizers" call the associated module and get its predictions
-    Also compute the average of all the predictions, the "ensemble"
-    '''    
+def getOptimizers():
     optimizers = {}
     optimizers["RF"] = buildRF
     #optimizers["NN"] = buildNN
     #optimizers["XGB"] = buildXGB
+    return optimizers
+
+def getModelPreds(dataDict, config):
+    '''
+    For each entry in "optimizers" call the associated algo and get its predictions
+    For each algo, store the best error score and its predictions in a numpy array
+    Then compute the average of all the predictions, the "ensemble"
+    '''
+    optimizers = getOptimizers()
     for typ, module in optimizers.items():
-        errors, preds = module(dataDict, config)
-        print(errors)
-        errors, preds = module(SMOTEdata, config)
-        print(errors)
+        error, parms = module(dataDict, config)
+        #errors, preds = module(SMOTEdata, config)
     return df
 
 '''def calcErrors(df):
@@ -61,7 +64,6 @@ if __name__ == "__main__":
     '''
     Run the optimizer routine for each model type (Random Forest, NN, XGB)
     Get the error and predictions of the best model
-    Get the error for the Baseline plus the ensemble
     '''
     config   = getConfig()
     df       = getData(config)
