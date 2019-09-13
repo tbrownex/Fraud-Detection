@@ -1,6 +1,7 @@
 ''' Get the command line arguments:
     Mandatory
-    - none
+    - Whether to use the full dataset or a sample
+    - Whether to use a keras-defined network or native code
     
     Optional arguments
     - save: whether to save the model with best score'''
@@ -16,6 +17,9 @@ def getArgs():
     parser.add_argument("testInd", \
                         choices=['test','full'], \
                         help="Run against the full data or a test portion")
+    parser.add_argument("networkType", \
+                        choices=['keras','native'], \
+                        help="Use keras or native")
     '''parser.add_argument('--outliers',
                         required=False,
                         action='store_true',

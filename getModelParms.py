@@ -43,20 +43,18 @@ def getParms(typ):
                                       Lambda,
                                       dropout,
                                       optimizer))
-    elif typ == "AE":     # AutoEncoder for outlier detection
-        L1Size       = [18]
-        L2Size       = [12]
-        activation   = ["tanh"]
-        batchSize    = [32]
-        learningRate = [2e-3]
-        std          = [0.5]
-        dropout      = [0.4]
-        optimizer    = ["Adam"]
+    elif typ == "AE":
+        L1Size      = [12, 24, 36]
+        L2Size      = [12, 18]
+        L3Size      = [6, 9]
+        activation   = ["tanh", "relu"]
+        learningRate = [1e-3, 1e-2]
+        dropout      = [0.4, 0.3]
+        optimizer    = ["adam"]
         return list(itertools.product(L1Size,
                                       L2Size,
+                                      L3Size,
                                       activation,
-                                      batchSize,
                                       learningRate,
-                                      std,
                                       dropout,
                                       optimizer))

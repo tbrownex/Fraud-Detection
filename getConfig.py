@@ -15,7 +15,7 @@ def getConfig():
     d["oneHot"] = True
     d["normalize"] = True
     d["numFolds"]   = 5
-    d["batchSize"] = 4096
+    d["batchSize"] = 32
     d["numClasses"]  = 2
     d["evaluationMethod"] = "--"
     d["logLoc"]     = "/home/tbrownex/"
@@ -23,6 +23,6 @@ def getConfig():
     d["logDefault"] = "info"
     d["valPct"]     = 0.2
     d["testPct"]    = 0.2     # There is a separate file with Test data
-    d["TBdir"] = '/home/tbrownex/TF/TensorBoard'         # where to store Tensorboard data
+    d["TBdir"] = '/home/tbrownex/TF/Tensorboard'         # where to store Tensorboard data
     d["modelDir"] = "/home/tbrownex/TF/models/"  # where to save models
     return d

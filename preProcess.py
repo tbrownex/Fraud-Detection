@@ -31,6 +31,9 @@ def preProcess(df, config, args):
     df = removeCols(df)
     print(" - {} static columns removed".format(colCount - df.shape[1]))
     
+    # This column is basically just a counter so can be removed
+    del df["Time"]
+    
     if args.testInd == "test":
         df = df.sample(frac=0.4)
         print(" - Using a fraction of the full data")
@@ -57,4 +60,5 @@ def preProcess(df, config, args):
         print(" - Not removing outliers")'''
     dataDict["trainX"] = dataDict["trainX"].astype(np.float32)
     dataDict["valX"] = dataDict["valX"].astype(np.float32)
+    dataDict["testX"] = dataDict["testX"].astype(np.float32)
     return dataDict
