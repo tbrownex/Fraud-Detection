@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 import time
+from datetime import datetime
 import tensorflow as tf
 from tensorflow import keras
+from sklearn.utils import shuffle
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -10,31 +12,13 @@ from getConfig  import getConfig
 from getArgs import getArgs
 from getData     import getData
 from preProcess import preProcess
-from createDataset import createDataset
 from getModelParms  import getParms
 from nnKeras import Model as kerasModel
 from nnNative import Model as native
+from removeLabels import removeLabels
+from removeClass import removeClass
 
-EPOCHS = 10
-
-def removePositives(dataDict):
-    ''' Train the encoder on Negatives only '''
-    before = dataDict["trainX"].shape[0]
-    idx = dataDict["trainY"][:,0]==1        # Column 0 =1 are the negatives
-    dataDict["trainX"] = dataDict["trainX"].loc[idx]
-    print(" - {} rows removed (positives) from 'train'".format(before - dataDict["trainX"].shape[0]))
-    idx = dataDict["valY"][:,0]==1
-    dataDict["valX"] = dataDict["valX"].loc[idx]
-    idx = dataDict["testY"][:,0]==1
-    dataDict["testX"] = dataDict["testX"].loc[idx]
-    return dataDict
-
-def removeLabels(dataDict):
-    ''' No labels for an Autoencoder; train on features only '''
-    del dataDict["trainY"]
-    del dataDict["valY"]
-    del dataDict["testY"]
-    return dataDict
+EPOCHS = 1
 
 def loadParms(p, parmDict):
     parmDict['l1Size'] = p[0]
@@ -66,61 +50,51 @@ def updateTB(tbWriter, tag, val, step):
     tbWriter.add_summary(summary, step)
     
 def saveModel(model, config):
-    pickle.dump(model, open(config["modelDir"] + "XGBmodel", 'wb'))
+    pickle.dump(model, open(config["modelDir"] + "NNnative", 'wb'))
 
 def processNative(dataDict, parmList, config, args):
     parmDict = {}
     parmDict["featureCount"] = dataDict["trainX"].shape[1]
     
-    with tf.name_scope("inputPipeline"):
-        trainDS = createDataset(dataDict, config, "train")
-        valDS = createDataset(dataDict, config, "val")
-        testDS = createDataset(dataDict, config, "test")
-        
-        iter = tf.compat.v1.data.Iterator.from_structure(trainDS.output_types, tf.compat.v1.data.get_output_shapes(trainDS))
-        # "labels" here is just the features repeated (we're trying to recreate the input)
-        features, labels = iter.get_next()
-        
-        trainInit = iter.make_initializer(trainDS)
-        valInit = iter.make_initializer(valDS)
-        testInit = iter.make_initializer(testDS)
+    BATCH = config['batchSize']
     
-    results = []               # Holds the final cost (against Test) for each set of parameters    
+    numBatches = int(dataDict["trainX"].shape[0]/config["batchSize"])
+    
+    results = []               # Holds the final cost (against Test) for each set of parameters
     for p in parmList:
         parmDict = loadParms(p, parmDict)
         
-        trainBatches = int(dataDict["trainX"].shape[0]/config["batchSize"])
-        valBatches = int(dataDict["valX"].shape[0]/config["batchSize"])
-        testBatches = int(dataDict["testX"].shape[0]/config["batchSize"])
+        # Build the network and get ops for Train and Cost functions
+        nn = native(parmDict)
+        cost = nn.cost
+        train = nn.train
+        
+        # for Tensorboard
+        tbCounter = 0
+        now = datetime.now()
         
         with tf.compat.v1.Session() as sess:
-            nn = native(parmDict, features, labels)
-            cost = nn.cost
-            train = nn.train
-            
-            tbCounter = 0
-            tbWriter = tf.summary.FileWriter(config["TBdir"]+"/nn", sess.graph)
+            saver = tf.compat.v1.train.Saver()
+            tbWriter = tf.summary.FileWriter(config["TBdir"]+"/nn/"+ now.strftime("%Y%m%d-%H%M"), sess.graph)
             sess.run(tf.compat.v1.global_variables_initializer())
             for e in range(EPOCHS):
-                sess.run(trainInit)
-                for z in range(trainBatches):
-                    _ = sess.run(train)
-                    
-                sess.run(valInit)    # end of epoch
-                total = 0
-                for _ in range(valBatches):
-                    total += sess.run(cost)
-                updateTB(tbWriter, "ValidationCost", total/valBatches, tbCounter)
-                tbCounter +=1
-                sess.run(trainInit)
+                a, b = shuffle(dataDict['trainX'],dataDict['trainX'])
+                for j in range(numBatches):
+                    x_mini = a[j*BATCH:j*BATCH+BATCH]
+                    y_mini = b[j*BATCH:j*BATCH+BATCH]
+                    _ = sess.run(train, feed_dict = {nn.X: x_mini, nn.y_: y_mini})
+                    if j % 50 ==0:
+                        valCost = sess.run(cost, feed_dict = {nn.X: dataDict["valX"], nn.y_: dataDict["valX"]})
+                        updateTB(tbWriter, "ValidationCost", valCost, tbCounter)
+                        tbCounter +=1
+                # end of epoch
                 
-            sess.run(testInit)     # end of all epochs
-            total = 0
-            for _ in range(testBatches):
-                total += sess.run(cost)
-            parmDict["finalCost"] = round(total/testBatches, 3)
+            # end of all epochs
+            finalCost = sess.run(cost, feed_dict = {nn.X: dataDict["testX"], nn.y_: dataDict["testX"]})
+            parmDict["finalCost"] = round(finalCost,4)
             tmp = pd.DataFrame.from_dict([parmDict])
             results.append(tmp)
+            saver.save(sess, config["modelDir"]+"NNmodel")
         tbWriter.close()
     return results
     
@@ -130,6 +104,7 @@ def processKeras(dataDict, parmList, config, args):
     
     tbCallback = keras.callbacks.TensorBoard(log_dir=config["TBdir"]+"/keras")
         
+    results = []               # Holds the final cost (against Test) for each set of parameters    
     for p in parmList:
         parmDict = loadParms(p, parmDict)
         nn = kerasModel(parmDict)
@@ -144,50 +119,24 @@ def processKeras(dataDict, parmList, config, args):
             verbose=0
         )
         #printHistory(history)
-        preds = nn.model.predict(dataDict["testX"])
+        #preds = nn.model.predict(dataDict["testX"])
+        #save(dataDict["testX"], preds)
         
-        save(dataDict["testX"], preds)
-        results = nn.model.evaluate(dataDict["testX"], dataDict["testX"])
-        print("Final: {:.3f}".format(results))
+        mse = nn.model.evaluate(dataDict["testX"], dataDict["testX"])
+        parmDict["finalCost"] = round(mse, 4)
+        tmp = pd.DataFrame.from_dict([parmDict])
+        results.append(tmp)
         
-        
-        
-    '''bestScore = np.inf
-    dfList = []
-    count=1
-    
-    for p in parmList:
-        parmDict = loadParms(p, ratio)
-        
-        lift = run(dataDict, parmDict, config)
-        
-        tup = (count, parm_dict, lift)
-        results.append(tup)
-        count +=1
-        
-        tmp = pd.DataFrame.from_records([parms])
-        dfList.append(tmp)
-        
-        if args.save:
-            if totalScore < bestScore:
-                bestScore = totalScore
-                saveModel(model, config)
-
-        print("{} of {}".format(count, len(parmList)))
-        count+=1'''
-    return
-    #return  pd.concat(dfList)
+    return results
 
 if __name__ == "__main__":
     args = getArgs()
     config = getConfig()
-    
     df = getData(config)
-    
     ''' This preprocessing is common to all the different algos I might try, e.g. XGBoost or standard NN'''
     dataDict = preProcess(df, config, args)
     ''' This is for autoencoder only '''
-    dataDict = removePositives(dataDict)
+    dataDict = removeClass(dataDict)
     dataDict = removeLabels(dataDict)
     
     parmList = getParms("AE")
@@ -195,9 +144,11 @@ if __name__ == "__main__":
     start = time.time()
     if args.networkType == "keras":
         results = processKeras(dataDict, parmList, config, args)
+        resultsDF = pd.concat(results)
+        resultsDF.to_csv("/home/tbrownex/KERASresults.csv", index=False)
     else:
         results = processNative(dataDict, parmList, config, args)
-    resultsDF = pd.concat(results)
-    resultsDF.to_csv("/home/tbrownex/NNresults.csv", index=False)
+        resultsDF = pd.concat(results)
+        resultsDF.to_csv("/home/tbrownex/NNresults.csv", index=False, float_format='%.4f')
     elapsed = (time.time() - start)/60
     print("Elapsed time: {:.1f} minutes".format(elapsed))

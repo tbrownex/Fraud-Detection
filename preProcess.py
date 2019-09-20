@@ -44,12 +44,12 @@ def preProcess(df, config, args):
         print("\nGenerating features")
         df = genFeatures(train, test)
     '''
-    dataDict = splitData(df, config)
+    dataDict = splitData(df, config, config["labelColumn"])
     dataDict = splitLabel(dataDict, config)
     
     if config["normalize"]:
         print(" - Normalizing the data")
-        dataDict = normalize(dataDict, "Std")
+        dataDict = normalize(dataDict, "MinMax")
     else:
         print(" - Not normalizing the data")
         
@@ -59,6 +59,8 @@ def preProcess(df, config, args):
     else:
         print(" - Not removing outliers")'''
     dataDict["trainX"] = dataDict["trainX"].astype(np.float32)
-    dataDict["valX"] = dataDict["valX"].astype(np.float32)
-    dataDict["testX"] = dataDict["testX"].astype(np.float32)
+    if "valX" in dataDict.keys():
+        dataDict["valX"] = dataDict["valX"].astype(np.float32)
+    if "testX" in dataDict.keys():
+        dataDict["testX"] = dataDict["testX"].astype(np.float32)
     return dataDict

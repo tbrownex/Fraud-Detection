@@ -44,12 +44,12 @@ def getParms(typ):
                                       dropout,
                                       optimizer))
     elif typ == "AE":
-        L1Size      = [12, 24, 36]
-        L2Size      = [12, 18]
-        L3Size      = [6, 9]
-        activation   = ["tanh", "relu"]
-        learningRate = [1e-3, 1e-2]
-        dropout      = [0.4, 0.3]
+        L1Size      = [48]
+        L2Size      = [24]
+        L3Size      = [12]
+        activation   = ["relu"]
+        learningRate = [5e-4]
+        dropout      = [0.0]
         optimizer    = ["adam"]
         return list(itertools.product(L1Size,
                                       L2Size,
