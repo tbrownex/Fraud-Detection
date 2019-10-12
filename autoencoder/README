@@ -1,0 +1,13 @@
+Autoencoder for fraud detection with positive rate of about 1 in 570
+
+The concept is to train an autoencoder on negatives only. Then when you run positives through it, you should see high reconstruction errors.
+
+So the steps are:
+1. Create a holdout dataset ("holdout.csv") from the entire dataset ("full") by running "createHoldout"
+2. Train against "train.csv", negatives only
+3. Save the trained model
+4. Run all of Holdout through the trained model. There will be both positives and negatives
+5. Sort the records by reconstruction error
+6. Pick the top 100 or so highest errors and create Precision and Recall metrics
+
+There are both native TF versions of the network plus a Keras version. I focused mainly on the native

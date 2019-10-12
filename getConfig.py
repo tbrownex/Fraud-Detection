@@ -9,7 +9,7 @@ __author__ = "Tom Browne"
 def getConfig():
     d = {}
     d["dataLoc"]     = "/home/tbrownex/data/CreditCardFraud/"
-    d["fileName"]    = "holdout.csv"
+    d["fileName"]    = "full.csv"
     d["labelColumn"] = "Class"
     d["labelType"] = "Categorical"
     d["oneHot"] = True
