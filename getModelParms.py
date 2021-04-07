@@ -1,4 +1,4 @@
-import itertools
+# import itertools
 import tensorflow as tf
 
 ''' This is the set of parameters we're "gridsearching" when optimizing the algos '''
@@ -31,25 +31,23 @@ def getParms(typ):
                                       subsample,
                                       gamma))
     elif typ == "NN":
-        L1Size = [256]
-        activation = [tf.nn.relu]
-        learningRate = [1e-2]
-        Lambda = [0.]
-        dropout = [0.3]
-        optimizer = ["Adam"]
-        return list(itertools.product(L1Size,
-                                      activation,
-                                      learningRate,
-                                      Lambda,
-                                      dropout,
-                                      optimizer))
+        d = {}        
+        d["L1Size"] = [4, 7]                           # random int; exponents to raise on 2
+        d["activation"] = "relu"                      # random choice
+        d["batchSize"] = 2048                       # random choice; exponents to raise on 2
+        d["learningRate"] = [1e-4, 5e-3]        # uniform dist; value
+        d["dropout"] = [0.25, 0.5]                 # random uniform; value
+        d["clsWeight"] = [25, 200]                 # random uniform; value
+        # d["normalizer"] = ["Std", "MinMax", None]
+        return d
+    
     elif typ == "AE":
         L1Size      = [48]
         L2Size      = [24]
         L3Size      = [12]
         activation   = ["relu"]
         learningRate = [5e-4]
-        dropout      = [0.0]
+        dropout      = 0.2
         optimizer    = ["adam"]
         return list(itertools.product(L1Size,
                                       L2Size,

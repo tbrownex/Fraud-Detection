@@ -55,14 +55,14 @@ if __name__ == "__main__":
     setLogging(config)
     
     df = getData(config)
-    #df = df.sample(frac=0.4)
-    dataDict = splitData(df, config)
-    dataDict = splitLabel(dataDict, config)
+    dataDict = preProcess(df, config, args)
+    ratio = printStats(dataDict)
+    input()
     
     parmList = getParms("RF")
     
     start = time.time()
-    results = process(dataDict, parmList, config, args)
-    results.to_csv("/home/tbrownex/RFresults.csv", index=False)
+    results = process(dataDict, parmList, config, args, ratio)
+    #results.to_csv("/home/tbrownex/RFresults.csv", index=False)
     elapsed = (time.time() - start)/60
     print("Elapsed time: {:.1f} minutes".format(elapsed))

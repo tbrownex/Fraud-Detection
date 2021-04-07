@@ -1,1 +1,11 @@
 https://www.tensorflow.org/beta/tutorials/keras/imbalanced_data
+
+For now I'm focusing on optimizing the NN. After that, look at RF and XGB.
+Optimization will happen "isolated" meaning run NNoptimize on its own, not part of "buildModels".
+Ensemble can happen after each has been optimized
+Consider "genFeatures"
+Consider "removeOutliers"
+I tried using TF Datasets with Keras but found it clunky
+
+
+My error is higher than the tutorial so try using their parameters and matching the error rate

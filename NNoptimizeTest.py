@@ -16,6 +16,7 @@ from getClassScores import getClassScores
 def printStats(dataDict):
     ratio = int(dataDict["trainY"].shape[0]/dataDict["trainY"][:,1].sum())
     print("Positive ratio of {}:1".format(ratio))
+    input()
     return ratio
 
 def loadParms(p, ratio):
@@ -106,7 +107,6 @@ if __name__ == "__main__":
     df = getData(config)
     dataDict = preProcess(df, config, args)
     ratio = printStats(dataDict)
-    input()
     
     parmList = getParms("NN")
     

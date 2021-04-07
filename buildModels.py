@@ -5,7 +5,7 @@ from getConfig   import getConfig
 from getData     import getData
 from splitData   import splitData
 from splitLabel  import splitLabel
-from optimizeRF  import buildRF
+from RFoptimize  import buildRF
 #from optimizeNN  import buildNN
 #from optimizeXGB import buildXGB
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     Run the optimizer routine for each model type (Random Forest, NN, XGB)
     Get the error and predictions of the best model
     '''
-    config   = getConfig()
+    config = getConfig()
     df       = getData(config)
     
     df = df.sample(frac=0.4)

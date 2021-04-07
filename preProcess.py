@@ -23,8 +23,7 @@ def removeCols(df):
     cols   = df.columns
     remove = analyzeCols(df)
     keep = [col for col in cols if col not in remove]
-    df = df[keep]
-    return df
+    return df[keep]
 
 def preProcess(df, config, args):
     colCount = df.shape[1]
@@ -33,7 +32,10 @@ def preProcess(df, config, args):
     
     # This column is basically just a counter so can be removed
     del df["Time"]
+    # "Amount" column has a very wide range so log-transform
+    df['Amount'] = np.log(df.pop('Amount')+1e-2)
     
+    # Use a small set of data for testing
     if args.testInd == "test":
         df = df.sample(frac=0.4)
         print(" - Using a fraction of the full data")
@@ -49,7 +51,7 @@ def preProcess(df, config, args):
     
     if config["normalize"]:
         print(" - Normalizing the data")
-        dataDict = normalize(dataDict, "MinMax")
+        dataDict = normalize(dataDict, "Std")
     else:
         print(" - Not normalizing the data")
         
@@ -59,8 +61,14 @@ def preProcess(df, config, args):
     else:
         print(" - Not removing outliers")'''
     dataDict["trainX"] = dataDict["trainX"].astype(np.float32)
+    dataDict["trainX"] = np.array(dataDict["trainX"])
+    dataDict["trainY"] = np.array(dataDict["trainY"])
     if "valX" in dataDict.keys():
         dataDict["valX"] = dataDict["valX"].astype(np.float32)
+        dataDict["valX"] = np.array(dataDict["valX"])
+        dataDict["valY"] = np.array(dataDict["valY"])
     if "testX" in dataDict.keys():
         dataDict["testX"] = dataDict["testX"].astype(np.float32)
+        dataDict["testX"] = np.array(dataDict["testX"])
+        dataDict["testY"] = np.array(dataDict["testY"])
     return dataDict
